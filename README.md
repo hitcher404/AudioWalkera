@@ -7,9 +7,11 @@ Currently has uinput joystick emulation with pretty random channels and hardcode
 
 ### Requires:
 
-* alsa-lib-devel
+* alsa-lib-devel/libasound2-dev
 
 ### Usage:
+
+Ensure correct audio input selected and volume set.
 
 ```
 make
