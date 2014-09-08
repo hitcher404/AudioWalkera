@@ -19,7 +19,7 @@ int16_t rudder, elevator,ailerons,throttle,flipSwitch;
 
 
 
-int setup_hardware(snd_pcm_t *handle, snd_pcm_hw_params_t *params, int * dir){
+int setupHardware(snd_pcm_t *handle, snd_pcm_hw_params_t *params, int * dir){
 	snd_pcm_uframes_t frames;
 	unsigned int val;
 
@@ -81,43 +81,40 @@ int processOct(int val){
 }
 
 
-void processAll( int* processed){
 
+void processAll(int* processed){
 
-
-	int msb;
-	msb = processed[16]&1;
-
-	rudder = msb*256+processed[17]*128+processed[18]*16+processed[19]*8+processed[20];
-
-	elevator = processed[2]*64+processed[3]*32+processed[4]*4+processed[5]*2+(processed[6]>>2);
-
-	msb = processed[6]&1;
-
-	ailerons = msb*256+processed[7]*128+processed[8]*16+processed[9]*8+processed[10];
-
-	throttle = processed[12]*64+processed[13]*32+processed[14]*4+processed[15]*2+((processed[16]&4)>>2);
-
-	flipSwitch = processed[23];
-
-
-	if(!processed[11]) throttle = -throttle;
-
-
-	if(!(processed[6]&2)) ailerons = -ailerons;
-
+	elevator = (processed[2] << 6) | (processed[3] << 5) | 
+		(processed[4] << 2) | (processed[5] << 1) | ((processed[6] & 4) >> 2);
 
 	if(!processed[1]) elevator = -elevator;
 
 
+	ailerons = ((processed[6] & 1) << 8) | (processed[7] << 7) |
+		(processed[8] << 4) | (processed[9] << 3) | processed[10];
+
+	if(!(processed[6] & 2)) ailerons = -ailerons;
+
+
+	throttle = (processed[12] << 6) | (processed[13] << 5) |
+	       (processed[14] << 2) | (processed[15] << 1) | ((processed[16] & 4) >> 2);	
+
+	if(!processed[11]) throttle = -throttle;
+
+
+	rudder = ((processed[16] & 1) << 8) | (processed[17] << 7) |
+		(processed[18] << 4) | (processed[19] << 3) | processed[20];
+
 	if(!(processed[16]&2)) rudder = -rudder;
 
 
+	flipSwitch = processed[23];
+
+
 	if(debug){
-		std::cout << throttle << "  " << elevator << "  " << 
+		std::cout << throttle << "  " << elevator << "  " <<
 			rudder << "  " << ailerons << "  " << flipSwitch << "  " << std::endl;
 	}
-
 
 }
 
@@ -217,7 +214,7 @@ int main(int argc, char *argv[]){
 		exitError("Could not open pcm device");
 
 	snd_pcm_hw_params_alloca(&params);
-	rc = setup_hardware(handle, params, &dir);
+	rc = setupHardware(handle, params, &dir);
 
 	if(rc < 0)
 		exitError("Could not set hardware parameters");
