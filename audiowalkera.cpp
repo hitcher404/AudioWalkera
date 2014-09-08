@@ -141,7 +141,6 @@ int main(int argc, char *argv[]){
 	int                    fd;
 	struct uinput_user_dev uidev;
 	struct input_event     ev;
-	double dx, dy;
 
 	fd = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
 	if(fd < 0)
@@ -174,17 +173,18 @@ int main(int argc, char *argv[]){
 	uidev.id.version = 1;
 
 	//Hardcoded calibration values, set these yourself.
-	uidev.absmax[ABS_X] = 365;
-	uidev.absmin[ABS_X] = -365;
+	uidev.absmax[ABS_X] = 370;
+	uidev.absmin[ABS_X] = -370;
 
-	uidev.absmax[ABS_Y] = 425;
-	uidev.absmin[ABS_Y] = -425;
+	uidev.absmax[ABS_Y] = 370;
+	uidev.absmin[ABS_Y] = -370;
 
-	uidev.absmax[ABS_RUDDER] = 370;
-	uidev.absmin[ABS_RUDDER] = -370;
+	uidev.absmax[ABS_RUDDER] = 365;
+	uidev.absmin[ABS_RUDDER] = -365;
 
-	uidev.absmax[ABS_THROTTLE] = 370;
-	uidev.absmin[ABS_THROTTLE] = -370;
+	uidev.absmax[ABS_THROTTLE] = 425;
+	uidev.absmin[ABS_THROTTLE] = -420;
+
 
 
 	if(write(fd, &uidev, sizeof(uidev)) < 0){
@@ -326,24 +326,6 @@ int main(int argc, char *argv[]){
 			memset(&ev, 0, sizeof(struct input_event));
 			ev.type = EV_ABS;
 			ev.code = ABS_X;
-			ev.value = rudder;
-			if(write(fd, &ev, sizeof(struct input_event)) < 0){
-				exitError("error: write event");
-			}
-
-
-			memset(&ev, 0, sizeof(struct input_event));
-			ev.type = EV_ABS;
-			ev.code = ABS_Y;
-			ev.value = throttle;
-			if(write(fd, &ev, sizeof(struct input_event)) < 0){
-				exitError("error: write event");
-			}
-
-
-			memset(&ev, 0, sizeof(struct input_event));
-			ev.type = EV_ABS;
-			ev.code = ABS_RUDDER;
 			ev.value = ailerons;
 			if(write(fd, &ev, sizeof(struct input_event)) < 0){
 				exitError("error: write event");
@@ -352,8 +334,26 @@ int main(int argc, char *argv[]){
 
 			memset(&ev, 0, sizeof(struct input_event));
 			ev.type = EV_ABS;
-			ev.code = ABS_THROTTLE;
+			ev.code = ABS_Y;
 			ev.value = elevator;
+			if(write(fd, &ev, sizeof(struct input_event)) < 0){
+				exitError("error: write event");
+			}
+
+
+			memset(&ev, 0, sizeof(struct input_event));
+			ev.type = EV_ABS;
+			ev.code = ABS_RUDDER;
+			ev.value = rudder;
+			if(write(fd, &ev, sizeof(struct input_event)) < 0){
+				exitError("error: write event");
+			}
+
+
+			memset(&ev, 0, sizeof(struct input_event));
+			ev.type = EV_ABS;
+			ev.code = ABS_THROTTLE;
+			ev.value = throttle;
 			if(write(fd, &ev, sizeof(struct input_event)) < 0){
 				exitError("error: write event");
 			}
