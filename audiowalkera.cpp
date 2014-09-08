@@ -15,12 +15,14 @@
 bool debug = true;
 
 
-int16_t rudder, elevator,ailerons,throttle,flipSwitch;
+int16_t rudder, elevator, ailerons, throttle, flipSwitch;
 
 
 
 int setupHardware(snd_pcm_t *handle, snd_pcm_hw_params_t *params, int * dir){
+
 	snd_pcm_uframes_t frames;
+
 	unsigned int val;
 
 	snd_pcm_hw_params_any(handle, params);
@@ -32,12 +34,12 @@ int setupHardware(snd_pcm_t *handle, snd_pcm_hw_params_t *params, int * dir){
 
 	snd_pcm_hw_params_set_channels(handle, params, 1);
 
-
-
 	val = 48000;
+
 	snd_pcm_hw_params_set_rate_near(handle, params, &val, dir);
 
 	frames = 2304;
+
 	snd_pcm_hw_params_set_period_size_near(handle, params, &frames, dir);
 
 	return snd_pcm_hw_params(handle, params);
@@ -45,6 +47,7 @@ int setupHardware(snd_pcm_t *handle, snd_pcm_hw_params_t *params, int * dir){
 
 
 int processBin(int val){
+
 	int ret = 0;
 	if(val < 17){
 		ret = 0;
@@ -121,10 +124,13 @@ void processAll(int* processed){
 void exitError(const char* err){
 
 	std::cout << err << std::endl;
-
 	exit(1);
 
 }
+
+
+
+
 
 int main(int argc, char *argv[]){
 
@@ -135,8 +141,7 @@ int main(int argc, char *argv[]){
 	int                    fd;
 	struct uinput_user_dev uidev;
 	struct input_event     ev;
-	double                    dx, dy;
-	int                    k;
+	double dx, dy;
 
 	fd = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
 	if(fd < 0)
@@ -235,7 +240,7 @@ int main(int argc, char *argv[]){
 
 	bool falling = true;
 
-	int values[51];
+	int values[25];
 	int valuesIndex = 0;
 
 
@@ -257,7 +262,6 @@ int main(int argc, char *argv[]){
 		else {
 			for(i=0; i < rc; i++){
 				t++;
-				//std::cout << buffer[i] << std::endl;
 
 
 				if(buffer[i] > 0){
@@ -268,19 +272,12 @@ int main(int argc, char *argv[]){
 
 				//if(highCount == 62 && (buffer[i+1] < 0) || highCount == 63){
 				if(highCount >= 62 && (buffer[i+1] < 0)){
-					//std::cout << "FRAME" << std::endl;
 					highCount = 0;
 					inFrame = true;
 					startIndex = i+1;
-
-					//std::cout << time.elapsed()*1000 << std::endl;
-					//time.restart();
-
 					break;
 				}
 
-
-				//usleep(10);
 			}
 
 			valuesIndex = 1;
@@ -318,20 +315,18 @@ int main(int argc, char *argv[]){
 
 				if(valuesIndex == 24) inFrame = false;
 
-
-
 			}
 
 			processAll(values);
 
-			dx = rudder;
-			dy = throttle;
+			//dx = rudder;
+			//dy = throttle;
 
 
 			memset(&ev, 0, sizeof(struct input_event));
 			ev.type = EV_ABS;
 			ev.code = ABS_X;
-			ev.value = dx;
+			ev.value = rudder;
 			if(write(fd, &ev, sizeof(struct input_event)) < 0){
 				exitError("error: write event");
 			}
@@ -340,7 +335,7 @@ int main(int argc, char *argv[]){
 			memset(&ev, 0, sizeof(struct input_event));
 			ev.type = EV_ABS;
 			ev.code = ABS_Y;
-			ev.value = dy;
+			ev.value = throttle;
 			if(write(fd, &ev, sizeof(struct input_event)) < 0){
 				exitError("error: write event");
 			}
