@@ -1,7 +1,5 @@
 #include <alsa/asoundlib.h>
 
-#include <stdio.h>
-
 #include <unistd.h>
 #include <fcntl.h>
 #include <linux/input.h>
@@ -137,10 +135,12 @@ int main(int argc, char *argv[]){
 
 
 
-	////////////////////////////////////////////UINPUT
+	////////////////////////////////////////////Uinput setup
 	int                    fd;
 	struct uinput_user_dev uidev;
 	struct input_event     ev;
+
+	struct input_event multiEv[4];
 
 	fd = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
 	if(fd < 0)
@@ -196,7 +196,6 @@ int main(int argc, char *argv[]){
 
 	sleep(2);
 
-	srand(time(NULL));
 	/////////////////////////////////////////////////////////
 
 
@@ -211,9 +210,7 @@ int main(int argc, char *argv[]){
 	short *buffer;
 	int t = 0, i, c;
 
-	if(argc < 2)
-		rc = snd_pcm_open(&handle, "default", SND_PCM_STREAM_CAPTURE, 0);
-	else rc = snd_pcm_open(&handle, argv[1], SND_PCM_STREAM_CAPTURE, 0);
+	rc = snd_pcm_open(&handle, "default", SND_PCM_STREAM_CAPTURE, 0);
 
 	if(rc < 0)
 		exitError("Could not open pcm device");
@@ -256,9 +253,10 @@ int main(int argc, char *argv[]){
 		rc = snd_pcm_readi(handle, buffer, frames);
 
 		if( rc == -EPIPE )
-			fprintf(stderr, "buffer overrun\n");
+			std::cerr << "Buffer overrun" << std::endl;
+
 		else if( rc < 0 )
-			fprintf(stderr, "read error: %s\n", snd_strerror(rc));
+			std::cerr << "Read error: " << snd_strerror(rc) << std::endl;
 		else {
 			for(i=0; i < rc; i++){
 				t++;
@@ -319,42 +317,29 @@ int main(int argc, char *argv[]){
 
 			processAll(values);
 
-			//dx = rudder;
-			//dy = throttle;
+
+			//Uinput event injection
+
+			memset(&multiEv, 0, sizeof(multiEv));
+
+			multiEv[0].type = EV_ABS;
+			multiEv[0].code = ABS_X;
+			multiEv[0].value = ailerons;
+
+			multiEv[1].type = EV_ABS;
+			multiEv[1].code = ABS_Y;
+			multiEv[1].value = elevator;
+
+			multiEv[2].type = EV_ABS;
+			multiEv[2].code = ABS_THROTTLE;
+			multiEv[2].value = throttle;
+
+			multiEv[3].type = EV_ABS;
+			multiEv[3].code = ABS_RUDDER;
+			multiEv[3].value = rudder;
 
 
-			memset(&ev, 0, sizeof(struct input_event));
-			ev.type = EV_ABS;
-			ev.code = ABS_X;
-			ev.value = ailerons;
-			if(write(fd, &ev, sizeof(struct input_event)) < 0){
-				exitError("error: write event");
-			}
-
-
-			memset(&ev, 0, sizeof(struct input_event));
-			ev.type = EV_ABS;
-			ev.code = ABS_Y;
-			ev.value = elevator;
-			if(write(fd, &ev, sizeof(struct input_event)) < 0){
-				exitError("error: write event");
-			}
-
-
-			memset(&ev, 0, sizeof(struct input_event));
-			ev.type = EV_ABS;
-			ev.code = ABS_RUDDER;
-			ev.value = rudder;
-			if(write(fd, &ev, sizeof(struct input_event)) < 0){
-				exitError("error: write event");
-			}
-
-
-			memset(&ev, 0, sizeof(struct input_event));
-			ev.type = EV_ABS;
-			ev.code = ABS_THROTTLE;
-			ev.value = throttle;
-			if(write(fd, &ev, sizeof(struct input_event)) < 0){
+			if(write(fd, &multiEv, sizeof(multiEv)) < 0){
 				exitError("error: write event");
 			}
 
